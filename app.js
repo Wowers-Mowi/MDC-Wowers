@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 genero: document.getElementById('add-genero').value,
                 residencia: document.getElementById('add-residencia').value,
                 raza: document.getElementById('add-raza').value,
-                foto: 'https://i.imgur.com/fgKqnC9.png'
+                foto: 'https://i.imgur.com/NPt22ih.png'
             };
 
             // Check if ID already exists
@@ -503,7 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const imgEl = document.querySelector('.mugshot-img');
         if (imgEl) {
-            imgEl.src = ficha.foto || 'https://i.imgur.com/fgKqnC9.png';
+            imgEl.src = ficha.foto || 'https://i.imgur.com/NPt22ih.png';
             imgEl.style.cursor = 'pointer';
 
             imgEl.addEventListener('click', () => {
