@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USMS MDC</title>
+    <link rel="icon" href="https://i.imgur.com/NPt22ih.png" type="image/png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- Top Window Bar -->
+    <div id="window-title-bar">
+        <div class="window-title">MDC</div>
+    </div>
+
+    <!-- Background Layer -->
+    <div id="background-layer">
+        <img src="https://i.imgur.com/m14snLi.png" alt="USMS Logo" id="bg-logo">
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-container"></div>
+
+    <!-- Start Menu -->
+    <div id="start-menu" class="hidden">
+        <div class="start-menu-left">
+            <div class="start-menu-header">
+                <i class="fas fa-bars menu-hamburger"></i>
+                <div class="menu-home" data-route="/inicio">
+                    <i class="fas fa-home"></i> Inicio
+                </div>
+            </div>
+
+            <div class="menu-section-title">Más usados</div>
+            <div class="menu-items">
+                <div class="menu-item" data-route="/add_ficha">
+                    <i class="fas fa-file-medical"></i>
+                    <span>Añadir ficha<br>gubernamental</span>
+                </div>
+                <div class="menu-item" data-route="/buscar_ficha">
+                    <i class="fas fa-file-search"></i>
+                    <i class="fas fa-search"
+                        style="position:absolute; margin-left:-8px; margin-top:8px; font-size:10px;"></i>
+                    <span style="margin-left: 10px;">Buscar ficha<br>gubernamental</span>
+                </div>
+            </div>
+
+            <div class="menu-bottom">
+                <i class="fas fa-cog" data-route="/config" title="Configuración"></i>
+            </div>
+        </div>
+
+        <div class="start-menu-right">
+            <div class="menu-section-title">Accesos directos</div>
+            <div class="shortcut-card" data-route="/logs">
+                <i class="fas fa-file-alt"></i>
+                <span>Logs</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Taskbar -->
+    <div id="taskbar">
+        <div id="start-button">
+            <i class="fab fa-windows"></i>
+        </div>
+        <div id="taskbar-apps">
+            <!-- Icons from reference image -->
+            <div class="taskbar-icon active" data-route="/add_ficha" title="Añadir ficha">
+                <i class="fas fa-file-medical"></i>
+            </div>
+            <div class="taskbar-icon" data-route="/buscar_ficha" title="Buscar ficha">
+                <i class="fas fa-file-signature"></i>
+            </div>
+            <div class="taskbar-icon" data-route="/reporte_arresto" title="Reporte de Arresto">
+                <i class="fas fa-handcuffs"></i>
+            </div>
+            <div class="taskbar-icon" title="Libro">
+                <i class="fas fa-book-open"></i>
+            </div>
+            <div class="taskbar-icon" title="Usuario">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="taskbar-icon" title="Lupa">
+                <i class="fas fa-search"></i>
+            </div>
+            <div class="taskbar-icon" title="Lupa +">
+                <i class="fas fa-search-plus"></i>
+            </div>
+        </div>
+        <div id="taskbar-right">
+            <i class="far fa-bell" style="margin-right: 15px; font-size: 1.1rem;"></i>
+            <div id="clock">
+                <div id="clock-date">08/05/2026</div>
+                <div id="clock-time">00:32</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TEMPLATES -->
+    <template id="tpl-inicio">
+        <div class="inicio-container"></div>
+    </template>
+
+    <template id="tpl-add-ficha">
+        <div class="window-panel">
+            <div class="panel-header">
+                <span class="panel-title">Agregar ficha gubernamental</span>
+                <i class="fas fa-times close-panel" id="btn-close-add"></i>
+            </div>
+            <div class="panel-content">
+                <form id="form-add-ficha">
+                    <h3 class="section-heading">Información básica</h3>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label>Nombre</label>
+                            <div class="input-with-icon">
+                                <i class="far fa-user"></i>
+                                <input type="text" id="add-nombre" placeholder="Nombre" required autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Apellido</label>
+                            <div class="input-with-icon">
+                                <i class="far fa-user"></i>
+                                <input type="text" id="add-apellido" placeholder="Apellido" required autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label>Identificación (Sin #)</label>
+                            <div class="input-with-icon">
+                                <i class="far fa-id-card"></i>
+                                <input type="text" id="add-identificacion" placeholder="Identificación" required
+                                    autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Número de teléfono</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-phone-alt"></i>
+                                <input type="text" id="add-telefono" placeholder="Teléfono" required autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="section-heading" style="margin-top: 20px;">Información demográfica</h3>
+                    <div class="form-row-4">
+                        <div class="form-group">
+                            <label>Edad</label>
+                            <div class="input-with-icon">
+                                <i class="far fa-user"></i>
+                                <input type="number" id="add-edad" placeholder="Edad" required autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Género</label>
+                            <div class="input-with-icon">
+                                <select id="add-genero" required>
+                                    <option value="">Selecciona género</option>
+                                    <option value="Masculino">Masculino</option>
+                                    <option value="Femenino">Femenino</option>
+                                    <option value="No especificado">No especificado</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Residencia</label>
+                            <div class="input-with-icon">
+                                <i class="far fa-building"></i>
+                                <input type="text" id="add-residencia" placeholder="Residencia" required
+                                    autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Raza</label>
+                            <div class="input-with-icon">
+                                <i class="far fa-user"></i>
+                                <select id="add-raza" required>
+                                    <option value="">Selecciona raza</option>
+                                    <option value="Caucásico">Caucásico</option>
+                                    <option value="Afroamericano">Afroamericano</option>
+                                    <option value="Hispano">Hispano</option>
+                                    <option value="Asiático">Asiático</option>
+                                    <option value="No especificada">No especificada</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions-center">
+                        <button type="submit" class="btn-yellow">
+                            <i class="far fa-paper-plane"></i> Enviar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-buscar-ficha">
+        <div class="window-panel panel-search">
+            <div class="panel-header">
+                <span class="panel-title">Busca una ficha gubernamental</span>
+                <i class="fas fa-times close-panel" id="btn-close-buscar"></i>
+            </div>
+            <div class="panel-content">
+                <p class="search-subtitle">Busca una ficha gubernamental eligiendo cualquiera de las 3 <strong>opciones
+                        de búsqueda</strong></p>
+                <form id="form-buscar-ficha">
+                    <div class="form-group">
+                        <div class="input-with-icon search-input">
+                            <i class="far fa-user"></i>
+                            <input type="text" id="search-nombre" placeholder="Nombre" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-with-icon search-input">
+                            <i class="far fa-user"></i>
+                            <input type="text" id="search-apellido" placeholder="Apellido" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="form-group custom-multiselect-container">
+                        <div class="input-with-icon search-input">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="buscar-id" placeholder="Buscar Identificación..." autocomplete="off">
+                        </div>
+                        <div id="autocomplete-results" class="hidden"
+                            style="position: absolute; top: 100%; left: 0; width: 100%; background: var(--input-bg); border: 1px solid var(--input-border); border-top: none; border-radius: 0 0 4px 4px; z-index: 100; max-height: 200px; overflow-y: auto;">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-yellow btn-full">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-ficha-view">
+        <div class="window-panel view-panel">
+            <div class="panel-header view-header">
+                <!-- Controls top right inside the panel -->
+                <div class="view-controls">
+                    <i class="fas fa-minus circle-btn"></i>
+                    <i class="fas fa-times circle-btn close-btn" id="btn-close-ficha"></i>
+                </div>
+            </div>
+
+            <div class="view-content">
+                <div class="yellow-banner">Ficha Gubernamental</div>
+
+                <div class="ficha-body">
+                    <!-- Left Column -->
+                    <div class="ficha-left">
+                        <img src="https://i.imgur.com/fgKqnC9.png" alt="Mugshot" class="mugshot-img">
+                        <div class="ficha-name" id="view-fullname">Nombre</div>
+                        <div class="ficha-id-badge" id="view-idbadge">#ID</div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="ficha-right">
+                        <!-- Info Personal Box -->
+                        <div class="info-box border-yellow">
+                            <div class="box-header">
+                                <h3 class="text-yellow">Información personal</h3>
+                            </div>
+                            <div class="info-grid">
+                                <div>Identificación</div>
+                                <div class="text-right text-bold" id="view-identificacion"></div>
+                                <div>Teléfono</div>
+                                <div class="text-right text-bold" id="view-telefono"></div>
+                                <div>Género</div>
+                                <div class="text-right text-bold" id="view-genero"></div>
+                                <div>Residencia</div>
+                                <div class="text-right text-bold" id="view-residencia"></div>
+                                <div>Edad</div>
+                                <div class="text-right text-bold" id="view-edad"></div>
+                                <div>Raza</div>
+                                <div class="text-right text-bold" id="view-raza"></div>
+                            </div>
+                        </div>
+
+                        <!-- Stats Box -->
+                        <div class="info-box border-red" style="margin-top: 15px;">
+                            <div class="info-grid">
+                                <div>ByC Activos</div>
+                                <div class="text-right text-bold" id="view-byc-count">0</div>
+                                <div>BOLO Relacionados</div>
+                                <div class="text-right text-bold"><i class="fas fa-exclamation-triangle text-red"
+                                        style="font-size:0.8rem; margin-right:5px;"></i><span
+                                        id="view-bolo-count">0</span></div>
+                                <div>Nº de arrestos</div>
+                                <div class="text-right text-bold" id="view-arrests-count">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs Section -->
+                <div class="ficha-tabs-container">
+                    <div class="ficha-tabs">
+                        <div class="tab-btn active" data-tab="arrestos">Arrestos</div>
+                        <div class="tab-btn" data-tab="byc">ByC</div>
+                        <div class="tab-btn" data-tab="anotaciones">Anotaciones</div>
+                    </div>
+                    <div class="tab-content" id="tab-arrestos">
+                        <div id="lista-arrestos" class="cards-grid"></div>
+                    </div>
+                    <div class="tab-content hidden" id="tab-byc">
+                        <button class="btn-yellow" style="width: 150px; font-size: 12px;"><i class="far fa-file"></i>
+                            Agregar ByC</button>
+                    </div>
+                    <div class="tab-content hidden" id="tab-anotaciones">
+                        <button class="btn-yellow" style="width: 150px; font-size: 12px;"><i class="far fa-file"></i>
+                            Agregar anotación</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-reporte-arresto">
+        <div class="window-panel view-panel">
+            <div class="panel-header view-header" style="justify-content: space-between;">
+                <div style="flex:1;"></div>
+                <div style="flex:1; text-align: center; color: white; font-size: 16px; font-weight: 500;">Reporte de
+                    arresto</div>
+                <div style="flex:1; display:flex; justify-content:flex-end;">
+                    <i class="fas fa-times close-panel" id="btn-close-reporte"
+                        style="position:relative; right:0; font-size:16px;"></i>
+                </div>
+            </div>
+            <div class="view-content" style="padding: 20px 40px;">
+                <form id="form-reporte-arresto">
+                    <h3 class="section-heading"
+                        style="color:white; border-bottom:1px solid #333; padding-bottom:10px; margin-top:10px;">Sección
+                        de Información</h3>
+                    <div class="form-row-3">
+                        <div class="form-group">
+                            <label>Fecha</label>
+                            <div class="input-with-icon"><i class="far fa-calendar"></i><input type="date"
+                                    id="rep-fecha" required></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Tiempo</label>
+                            <div class="input-with-icon"><i class="far fa-clock"></i><input type="time" id="rep-tiempo"
+                                    required></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Callsign</label>
+                            <div class="input-with-icon"><i class="fas fa-phone"></i><input type="text"
+                                    id="rep-callsign" placeholder="32-06" required autocomplete="off"></div>
+                        </div>
+                    </div>
+                    <div class="form-row-3">
+                        <div class="form-group">
+                            <label>Nombre del agente</label>
+                            <div class="input-with-icon"><i class="far fa-user"></i><input type="text"
+                                    id="rep-agente-nombre" placeholder="Nombre completo" required autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Rango</label>
+                            <div class="input-with-icon"><i class="fas fa-star"></i><input type="text" id="rep-rango"
+                                    placeholder="Sin asignar" required autocomplete="off"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Placa</label>
+                            <div class="input-with-icon"><i class="fas fa-id-badge"></i><input type="text"
+                                    id="rep-placa" placeholder="00000" required autocomplete="off"></div>
+                        </div>
+                    </div>
+
+                    <h3 class="section-heading"
+                        style="color:white; border-bottom:1px solid #333; padding-bottom:10px; margin-top:30px;">Sección
+                        de arrestos</h3>
+                    <div class="form-row-3">
+                        <div class="form-group">
+                            <label>Nombre del sospechoso</label>
+                            <div class="input-with-icon"><i class="far fa-user"></i><input type="text"
+                                    id="rep-sospechoso-nombre" placeholder="Nombre completo" required readonly
+                                    style="background: #151922; cursor: not-allowed;"></div>
+                        </div>
+                        <div class="form-group custom-multiselect-container">
+                            <label>Identificación del sospechoso (Sin #)</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="rep-sospechoso-id" placeholder="Buscar Identificación..."
+                                    required autocomplete="off">
+                            </div>
+                            <div id="rep-id-dropdown" class="hidden custom-dropdown">
+                                <div id="rep-id-list-container">
+                                    <!-- Populated via JS -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group custom-multiselect-container">
+                            <label>Cargos</label>
+                            <div class="input-with-icon" id="rep-cargos-toggle" style="cursor: pointer;">
+                                <input type="text" id="rep-cargos-display" placeholder="Seleccionar cargos" readonly
+                                    style="cursor: pointer; pointer-events: none;">
+                            </div>
+                            <div id="rep-cargos-dropdown" class="hidden custom-dropdown">
+                                <div
+                                    style="padding: 10px; border-bottom: 1px solid #333; position: sticky; top: 0; background: var(--input-bg); z-index: 10;">
+                                    <input type="text" id="rep-search-cargos" placeholder="Buscar cargo..."
+                                        autocomplete="off"
+                                        style="width: 100%; background: #111; border: 1px solid #333; color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; outline: none;">
+                                </div>
+                                <div id="rep-cargos-list">
+                                    <!-- Generado desde CARGOS_LIST en app.js -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label>Narrativa de Arresto</label>
+                        <textarea id="rep-narrativa" required
+                            placeholder="El sujeto intervino en un procedimiento policial..." rows="4"
+                            style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); color:white; padding:10px; font-size:13px; resize:vertical; outline:none;"></textarea>
+                    </div>
+
+                    <h3 class="section-heading"
+                        style="color:white; border-bottom:1px solid #333; padding-bottom:10px; margin-top:30px;">Sección
+                        de evidencias</h3>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label>Ubicación del arresto</label>
+                            <div class="input-with-icon"><i class="fas fa-map-marker-alt"></i><input type="text"
+                                    id="rep-ubicacion" placeholder="Sin especificar" required autocomplete="off"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Soporte de evidencia</label>
+                            <textarea id="rep-evidencia" placeholder="Videos, fotos, audios..." rows="4"
+                                style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); color:white; padding:10px; font-size:13px; resize:vertical; outline:none;"></textarea>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:center; margin-top:30px; margin-bottom: 50px;">
+                        <button type="submit" class="btn-yellow" style="width:200px;">Enviar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </template>
+
+    <div id="informe-modal" class="modal-overlay hidden">
+        <div class="window-panel" style="width: 800px; height: 90%; background: #000; border-radius: 0;">
+            <div class="panel-header" style="justify-content: space-between; border-bottom: none;">
+                <div style="flex:1;"></div>
+                <div style="flex:1; text-align: center; color: white; font-size: 16px; font-weight: 500;">Reporte de
+                    arresto</div>
+                <div style="flex:1; display:flex; justify-content:flex-end;">
+                    <i class="fas fa-times close-panel" id="close-informe-modal"
+                        style="position:relative; right:0; font-size:16px;"></i>
+                </div>
+            </div>
+            <div class="panel-content" style="background:#0b0b0b; height:calc(100% - 45px); padding:20px 40px;"
+                id="informe-modal-content">
+                <!-- Data injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <div id="photo-modal" class="modal-overlay hidden">
+        <div class="window-panel photo-modal-panel">
+            <div class="panel-header">
+                <span class="panel-title">Actualizar fotografía</span>
+                <i class="fas fa-times close-panel" id="close-photo-modal"></i>
+            </div>
+            <div class="panel-content">
+                <div class="form-group">
+                    <label>Enlace de la foto (.png)</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-link"></i>
+                        <input type="text" id="photo-url-input" placeholder="https://...png">
+                    </div>
+                </div>
+                <button class="btn-yellow btn-full" id="btn-save-photo">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
