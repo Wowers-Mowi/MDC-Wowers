@@ -160,6 +160,26 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
     // ============================================================
 
+    // Helper functions to get only the article code (e.g. "1.1 Exceso de Velocidad" -> "1.1")
+    function getCargoArticle(cargo) {
+        if (!cargo) return '';
+        const trimmed = cargo.trim();
+        if (trimmed.startsWith('Art. ')) {
+            const parts = trimmed.split(' ');
+            return parts[0] + ' ' + parts[1];
+        } else {
+            return trimmed.split(' ')[0];
+        }
+    }
+
+    function formatCargosList(cargosString) {
+        if (!cargosString) return 'Ninguno';
+        return cargosString.split(',')
+            .map(c => getCargoArticle(c))
+            .filter(c => c !== '')
+            .join(', ');
+    }
+
     // --- State and DOM Elements ---
     const appContainer = document.getElementById('app-container');
     const startButton = document.getElementById('start-button');
@@ -167,6 +187,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const clockElement = document.getElementById('clock');
 
     // --- Data Management ---
+    function getLogs() {
+        const data = localStorage.getItem('mdc_logs');
+        return data ? JSON.parse(data) : [];
+    }
+
+    function saveLog(action, details) {
+        const logs = getLogs();
+        const now = new Date();
+        const timestamp = now.toISOString();
+        logs.push({ timestamp, action, details });
+        localStorage.setItem('mdc_logs', JSON.stringify(logs));
+    }
+
     function getFichas() {
         const data = localStorage.getItem('mdc_fichas');
         return data ? JSON.parse(data) : [];
@@ -176,6 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const fichas = getFichas();
         fichas.push(ficha);
         localStorage.setItem('mdc_fichas', JSON.stringify(fichas));
+        saveLog('Ficha Agregada', `Se agregó la ficha #${ficha.identificacion} para ${ficha.nombre} ${ficha.apellido}`);
     }
 
     function getFichaById(id) {
@@ -197,6 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const arrestos = getArrestos();
         arrestos.push(arresto);
         localStorage.setItem('mdc_arrestos', JSON.stringify(arrestos));
+        saveLog('Arresto Agregado', `Se registró un arresto para el sospechoso #${arresto.sospechoso_id} (${arresto.sospechoso_nombre})`);
     }
 
     // --- Taskbar and Start Menu ---
@@ -228,90 +263,109 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Navigation handlers
-    document.querySelectorAll('[data-route]').forEach(el => {
-        el.addEventListener('click', () => {
-            const route = el.getAttribute('data-route');
-            startMenu.classList.add('hidden'); // Close start menu on navigate
-            navigate(route);
-        });
-    });
-
-    function updateActiveTaskbarIcon(route) {
-        document.querySelectorAll('.taskbar-icon').forEach(icon => {
-            icon.classList.remove('active');
-            if (icon.getAttribute('data-route') === route) {
-                icon.classList.add('active');
+    let isAdmin = false;
+    const btnAdminToggle = document.getElementById('btn-admin-toggle');
+    if (btnAdminToggle) {
+        btnAdminToggle.addEventListener('click', () => {
+            isAdmin = !isAdmin;
+            if (isAdmin) {
+                document.body.classList.add('admin-mode');
+                btnAdminToggle.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                btnAdminToggle.style.color = 'var(--yellow-accent)';
+            } else {
+                document.body.classList.remove('admin-mode');
+                btnAdminToggle.style.backgroundColor = '';
+                btnAdminToggle.style.color = '';
             }
         });
     }
 
-    // --- Router ---
-    let currentAppRoute = '/inicio';
+    // --- View System (sin rutas URL) ---
+    const VIEWS = ['inicio', 'add_ficha', 'buscar_ficha', 'ficha', 'reporte_arresto', 'logs'];
 
-    function navigate(path) {
-        currentAppRoute = path;
-        try {
-            window.history.pushState(null, '', path);
-        } catch (e) {
-            // Ignore if running from file:// which restricts pushState
-        }
-        renderRoute();
-    }
+    function showView(viewName) {
+        appContainer.innerHTML = '';
 
-    function renderRoute() {
-        appContainer.innerHTML = ''; // Clear container
-        updateActiveTaskbarIcon(currentAppRoute);
+        // Update taskbar active state
+        document.querySelectorAll('.taskbar-icon').forEach(icon => {
+            icon.classList.remove('active');
+            if (icon.getAttribute('data-view') === viewName) {
+                icon.classList.add('active');
+            }
+        });
 
-        if (currentAppRoute === '/inicio') {
+        startMenu.classList.add('hidden');
+
+        if (viewName === 'inicio') {
             const template = document.getElementById('tpl-inicio').content.cloneNode(true);
             appContainer.appendChild(template);
         }
-        else if (currentAppRoute === '/add_ficha') {
+        else if (viewName === 'add_ficha') {
             const template = document.getElementById('tpl-add-ficha').content.cloneNode(true);
             appContainer.appendChild(template);
             setupAddFichaForm();
         }
-        else if (currentAppRoute === '/buscar_ficha') {
+        else if (viewName === 'buscar_ficha') {
             const template = document.getElementById('tpl-buscar-ficha').content.cloneNode(true);
             appContainer.appendChild(template);
             setupBuscarFichaForm();
         }
-        else if (currentAppRoute.startsWith('/ficha_')) {
-            const id = currentAppRoute.replace('/ficha_', '');
-            const ficha = getFichaById(id);
-            if (ficha) {
-                const template = document.getElementById('tpl-ficha-view').content.cloneNode(true);
-                appContainer.appendChild(template);
-                setupFichaView(ficha);
-            } else {
-                alert("Ficha no encontrada.");
-                navigate('/buscar_ficha');
-            }
-        }
-        else if (currentAppRoute === '/reporte_arresto') {
+        else if (viewName === 'reporte_arresto') {
             const template = document.getElementById('tpl-reporte-arresto').content.cloneNode(true);
             appContainer.appendChild(template);
             setupReporteArresto();
         }
+        else if (viewName === 'logs') {
+            const template = document.getElementById('tpl-logs').content.cloneNode(true);
+            appContainer.appendChild(template);
+            setupLogsView();
+        }
     }
 
-    window.addEventListener('popstate', () => {
-        currentAppRoute = window.location.pathname;
-        if (currentAppRoute === '/' || currentAppRoute.includes('index.html')) {
-            currentAppRoute = '/inicio';
+    function setupLogsView() {
+        const btnClose = document.getElementById('btn-close-logs');
+        if (btnClose) btnClose.addEventListener('click', () => showView('inicio'));
+        
+        const container = document.getElementById('logs-container');
+        const logs = getLogs().reverse();
+        if (logs.length === 0) {
+            container.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">No hay registros disponibles.</div>';
+            return;
         }
-        renderRoute();
+        
+        logs.forEach(log => {
+            const d = new Date(log.timestamp);
+            const formattedDate = d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
+            const div = document.createElement('div');
+            div.style = 'background: #111; padding: 10px; border-radius: 4px; border-left: 3px solid var(--yellow-accent); color: white; font-size: 13px;';
+            div.innerHTML = `<strong>[${formattedDate}] ${log.action}</strong><br><span style="color: var(--text-muted); font-size: 11px;">${log.details}</span>`;
+            container.appendChild(div);
+        });
+    }
+
+    function showFicha(id) {
+        const ficha = getFichaById(id);
+        if (ficha) {
+            appContainer.innerHTML = '';
+            const template = document.getElementById('tpl-ficha-view').content.cloneNode(true);
+            appContainer.appendChild(template);
+            setupFichaView(ficha);
+        } else {
+            alert('Ficha no encontrada.');
+            showView('buscar_ficha');
+        }
+    }
+
+    // Navigation handlers (data-view attribute)
+    document.querySelectorAll('[data-route]').forEach(el => {
+        el.addEventListener('click', () => {
+            const view = el.getAttribute('data-route').replace('/', '');
+            showView(view || 'inicio');
+        });
     });
 
-    // Initial Render
-    let initialPath = window.location.pathname;
-    if (initialPath === '/' || initialPath.includes('index.html')) {
-        navigate('/inicio');
-    } else {
-        currentAppRoute = initialPath;
-        renderRoute();
-    }
+    // Initial view
+    showView('inicio');
 
     // --- Logic for Templates ---
 
@@ -321,7 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (btnClose) {
             btnClose.addEventListener('click', () => {
-                navigate('/inicio');
+                showView('inicio');
             });
         }
 
@@ -349,7 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
             saveFicha(ficha);
             alert('Ficha guardada exitosamente.');
             form.reset();
-            navigate('/buscar_ficha');
+            showView('buscar_ficha');
         });
     }
 
@@ -363,7 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (btnClose) {
             btnClose.addEventListener('click', () => {
-                navigate('/inicio');
+                showView('inicio');
             });
         }
 
@@ -435,7 +489,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (targetId) {
-                    navigate(`/ficha_${targetId}`);
+                    showFicha(targetId);
                 } else {
                     alert('No se encontraron resultados que coincidan exactamente.');
                 }
@@ -517,9 +571,114 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        const btnEditFicha = document.getElementById('btn-edit-ficha');
+        if (btnEditFicha) {
+            const newBtn = btnEditFicha.cloneNode(true);
+            btnEditFicha.parentNode.replaceChild(newBtn, btnEditFicha);
+            newBtn.addEventListener('click', () => {
+                mostrarEditFichaModal(ficha);
+            });
+        }
+
         document.getElementById('btn-close-ficha').addEventListener('click', () => {
-            navigate('/inicio');
+            showView('inicio');
         });
+    }
+
+    function mostrarEditFichaModal(ficha) {
+        const modal = document.getElementById('edit-ficha-modal');
+        document.getElementById('edit-nombre').value = ficha.nombre;
+        document.getElementById('edit-apellido').value = ficha.apellido;
+        document.getElementById('edit-identificacion').value = ficha.identificacion;
+        document.getElementById('edit-telefono').value = ficha.telefono;
+        document.getElementById('edit-edad').value = ficha.edad;
+        document.getElementById('edit-genero').value = ficha.genero;
+        document.getElementById('edit-residencia').value = ficha.residencia;
+        document.getElementById('edit-raza').value = ficha.raza;
+        modal.classList.remove('hidden');
+
+        document.getElementById('close-edit-ficha-modal').onclick = () => {
+            modal.classList.add('hidden');
+        };
+
+        const form = document.getElementById('form-edit-ficha');
+
+        const btnDeleteFicha = document.getElementById('btn-delete-ficha');
+        if(btnDeleteFicha) {
+            btnDeleteFicha.onclick = (e) => {
+                e.preventDefault();
+                if(confirm("¿Estás seguro de que deseas eliminar esta ficha y todos sus arrestos asociados?")) {
+                    const fichas = getFichas();
+                    const fIndex = fichas.findIndex(f => f.identificacion === ficha.identificacion);
+                    if(fIndex !== -1) fichas.splice(fIndex, 1);
+                    localStorage.setItem('mdc_fichas', JSON.stringify(fichas));
+
+                    const arrestos = getArrestos();
+                    const newArrestos = arrestos.filter(a => a.sospechoso_id !== ficha.identificacion);
+                    localStorage.setItem('mdc_arrestos', JSON.stringify(newArrestos));
+
+                    saveLog('Ficha Eliminada', `Se eliminó la ficha y los arrestos de ${ficha.nombre} ${ficha.apellido} (#${ficha.identificacion})`);
+                    modal.classList.add('hidden');
+                    showView('inicio');
+                }
+            }
+        }
+
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            const fichas = getFichas();
+            const index = fichas.findIndex(f => f.identificacion === ficha.identificacion);
+            if (index !== -1) {
+                const oldFicha = {...fichas[index]};
+                
+                const newId = document.getElementById('edit-identificacion').value;
+                const newNombre = document.getElementById('edit-nombre').value;
+                const newApellido = document.getElementById('edit-apellido').value;
+                
+                fichas[index].identificacion = newId;
+                fichas[index].nombre = newNombre;
+                fichas[index].apellido = newApellido;
+                fichas[index].telefono = document.getElementById('edit-telefono').value;
+                fichas[index].edad = document.getElementById('edit-edad').value;
+                fichas[index].genero = document.getElementById('edit-genero').value;
+                fichas[index].residencia = document.getElementById('edit-residencia').value;
+                fichas[index].raza = document.getElementById('edit-raza').value;
+                
+                let changes = [];
+                if(oldFicha.nombre !== fichas[index].nombre) changes.push(`nombre de '${oldFicha.nombre}' a '${fichas[index].nombre}'`);
+                if(oldFicha.apellido !== fichas[index].apellido) changes.push(`apellido de '${oldFicha.apellido}' a '${fichas[index].apellido}'`);
+                if(oldFicha.identificacion !== fichas[index].identificacion) changes.push(`identificación de '#${oldFicha.identificacion}' a '#${fichas[index].identificacion}'`);
+                if(oldFicha.telefono !== fichas[index].telefono) changes.push(`teléfono de '${oldFicha.telefono}' a '${fichas[index].telefono}'`);
+                if(oldFicha.edad !== fichas[index].edad) changes.push(`edad de '${oldFicha.edad}' a '${fichas[index].edad}'`);
+                if(oldFicha.genero !== fichas[index].genero) changes.push(`género de '${oldFicha.genero}' a '${fichas[index].genero}'`);
+                if(oldFicha.residencia !== fichas[index].residencia) changes.push(`residencia de '${oldFicha.residencia}' a '${fichas[index].residencia}'`);
+                if(oldFicha.raza !== fichas[index].raza) changes.push(`raza de '${oldFicha.raza}' a '${fichas[index].raza}'`);
+
+                let details = `Ficha #${oldFicha.identificacion} actualizada.`;
+                if(changes.length > 0) {
+                    details += ` Cambios: ${changes.join(', ')}.`;
+                }
+                
+                localStorage.setItem('mdc_fichas', JSON.stringify(fichas));
+
+                if(oldFicha.identificacion !== newId || oldFicha.nombre !== newNombre || oldFicha.apellido !== newApellido) {
+                    const arrestos = getArrestos();
+                    let changedArrestos = false;
+                    arrestos.forEach(a => {
+                        if(a.sospechoso_id === oldFicha.identificacion) {
+                            a.sospechoso_id = newId;
+                            a.sospechoso_nombre = `${newNombre} ${newApellido}`;
+                            changedArrestos = true;
+                        }
+                    });
+                    if(changedArrestos) localStorage.setItem('mdc_arrestos', JSON.stringify(arrestos));
+                }
+
+                saveLog('Ficha Editada', details);
+                modal.classList.add('hidden');
+                showFicha(newId);
+            }
+        };
     }
 
     function mostrarInformeModal(a) {
@@ -541,7 +700,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="form-row-3" style="color:var(--text-muted); font-size:13px; margin-bottom:20px;">
                 <div><strong style="color:white; display:block; margin-bottom:5px;">Nombre del sospechoso</strong> ${a.sospechoso_nombre}</div>
                 <div><strong style="color:white; display:block; margin-bottom:5px;">Identificación</strong> ${a.sospechoso_id}</div>
-                <div><strong style="color:white; display:block; margin-bottom:5px;">Cargos</strong> <div style="background:#111; padding:5px; border-radius:4px;">${a.cargos || 'Ninguno'}</div></div>
+                <div><strong style="color:white; display:block; margin-bottom:5px;">Cargos</strong> <div style="background:#111; padding:5px; border-radius:4px;">${formatCargosList(a.cargos)}</div></div>
             </div>
             <div style="color:var(--text-muted); font-size:13px; margin-bottom:20px;">
                 <strong style="color:white; display:block; margin-bottom:5px;">Narrativa de Arresto</strong>
@@ -553,7 +712,103 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div><strong style="color:white; display:block; margin-bottom:5px;">Ubicación del arresto</strong> <div style="background:#111; padding:10px; border-radius:4px;">${a.ubicacion}</div></div>
                 <div><strong style="color:white; display:block; margin-bottom:5px;">Soporte de evidencia</strong> <div style="background:#111; padding:10px; border-radius:4px; min-height:60px;">${a.evidencia}</div></div>
             </div>
+            
+            <div class="admin-only flex" style="justify-content:center; gap:15px; margin-top:30px; margin-bottom:10px;">
+                <button class="btn-yellow btn-edit-arresto" style="width:120px;">Editar</button>
+                <button class="btn-yellow btn-delete-arresto" style="width:120px; background-color:#e53935; color:white; border-color: #e53935;">Eliminar</button>
+            </div>
         `;
+
+        const btnDelete = content.querySelector('.btn-delete-arresto');
+        if (btnDelete) {
+            btnDelete.addEventListener('click', () => {
+                if (confirm('¿Estás seguro de que deseas eliminar este arresto?')) {
+                    const arrestos = getArrestos();
+                    const index = arrestos.findIndex(arr => arr.fecha === a.fecha && arr.tiempo === a.tiempo && arr.sospechoso_id === a.sospechoso_id && arr.narrativa === a.narrativa);
+                    if (index !== -1) {
+                        arrestos.splice(index, 1);
+                        localStorage.setItem('mdc_arrestos', JSON.stringify(arrestos));
+                        saveLog('Arresto Eliminado', `Se eliminó el arresto del sospechoso #${a.sospechoso_id}`);
+                        document.getElementById('informe-modal').classList.add('hidden');
+                        showFicha(a.sospechoso_id);
+                    }
+                }
+            });
+        }
+
+        const btnEdit = content.querySelector('.btn-edit-arresto');
+        if (btnEdit) {
+            btnEdit.addEventListener('click', () => {
+                document.getElementById('informe-modal').classList.add('hidden');
+                showView('reporte_arresto');
+                
+                setTimeout(() => {
+                    document.getElementById('rep-fecha').value = a.fecha;
+                    document.getElementById('rep-tiempo').value = a.tiempo;
+                    document.getElementById('rep-callsign').value = a.callsign;
+                    document.getElementById('rep-agente-nombre').value = a.agente_nombre;
+                    document.getElementById('rep-rango').value = a.rango;
+                    document.getElementById('rep-placa').value = a.placa;
+                    document.getElementById('rep-sospechoso-id').value = a.sospechoso_id;
+                    document.getElementById('rep-sospechoso-nombre').value = a.sospechoso_nombre;
+                    document.getElementById('rep-cargos-display').value = a.cargos;
+                    document.getElementById('rep-narrativa').value = a.narrativa;
+                    document.getElementById('rep-ubicacion').value = a.ubicacion;
+                    document.getElementById('rep-evidencia').value = a.evidencia;
+
+                    const cargosList = a.cargos.split(',').map(c => c.trim());
+                    document.querySelectorAll('.cargo-checkbox').forEach(cb => {
+                        const code = getCargoArticle(cb.value);
+                        cb.checked = cargosList.includes(code);
+                    });
+
+                    const form = document.getElementById('form-reporte-arresto');
+                    const btnSubmit = form.querySelector('button[type="submit"]');
+                    if(btnSubmit) btnSubmit.innerHTML = 'Guardar Cambios';
+                    
+                    form.onsubmit = (e) => {
+                        e.preventDefault();
+                        const arrestos = getArrestos();
+                        const index = arrestos.findIndex(arr => arr.fecha === a.fecha && arr.tiempo === a.tiempo && arr.sospechoso_id === a.sospechoso_id && arr.narrativa === a.narrativa);
+                        if (index !== -1) {
+                            const oldArresto = {...arrestos[index]};
+                            const newArresto = {
+                                fecha: document.getElementById('rep-fecha').value,
+                                tiempo: document.getElementById('rep-tiempo').value,
+                                callsign: document.getElementById('rep-callsign').value,
+                                agente_nombre: document.getElementById('rep-agente-nombre').value,
+                                rango: document.getElementById('rep-rango').value,
+                                placa: document.getElementById('rep-placa').value,
+                                sospechoso_id: document.getElementById('rep-sospechoso-id').value,
+                                sospechoso_nombre: document.getElementById('rep-sospechoso-nombre').value,
+                                cargos: document.getElementById('rep-cargos-display').value,
+                                narrativa: document.getElementById('rep-narrativa').value,
+                                ubicacion: document.getElementById('rep-ubicacion').value,
+                                evidencia: document.getElementById('rep-evidencia').value
+                            };
+                            arrestos[index] = newArresto;
+                            localStorage.setItem('mdc_arrestos', JSON.stringify(arrestos));
+
+                            let changes = [];
+                            if(oldArresto.cargos !== newArresto.cargos) changes.push(`cargos`);
+                            if(oldArresto.narrativa !== newArresto.narrativa) changes.push(`narrativa`);
+                            if(oldArresto.ubicacion !== newArresto.ubicacion) changes.push(`ubicación`);
+                            if(oldArresto.evidencia !== newArresto.evidencia) changes.push(`evidencia`);
+                            if(oldArresto.agente_nombre !== newArresto.agente_nombre) changes.push(`agente`);
+                            if(oldArresto.callsign !== newArresto.callsign) changes.push(`callsign`);
+                            if(oldArresto.rango !== newArresto.rango) changes.push(`rango`);
+                            
+                            let details = `Se actualizó el arresto del sospechoso #${a.sospechoso_id}.`;
+                            if(changes.length > 0) details += ` Se modificó: ${changes.join(', ')}.`;
+
+                            saveLog('Arresto Editado', details);
+                            alert("Cambios guardados exitosamente.");
+                            showFicha(a.sospechoso_id);
+                        }
+                    };
+                }, 50);
+            });
+        }
 
         modal.classList.remove('hidden');
     }
@@ -568,7 +823,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupReporteArresto() {
         const btnClose = document.getElementById('btn-close-reporte');
         if (btnClose) {
-            btnClose.addEventListener('click', () => navigate('/inicio'));
+            btnClose.addEventListener('click', () => showView('inicio'));
         }
 
         // Auto-fill UTC Date and Time
@@ -660,7 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         function updateCargosDisplay() {
-            const selected = Array.from(cargosListContainer.querySelectorAll('.cargo-checkbox:checked')).map(i => i.value);
+            const selected = Array.from(cargosListContainer.querySelectorAll('.cargo-checkbox:checked')).map(i => getCargoArticle(i.value));
             cargosDisplay.value = selected.join(', ');
         }
 
@@ -688,7 +943,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const form = document.getElementById('form-reporte-arresto');
-        form.addEventListener('submit', (e) => {
+        form.onsubmit = (e) => {
             e.preventDefault();
 
             if (!inputNombre.value) {
@@ -713,8 +968,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             saveArresto(arresto);
             alert("Reporte de arresto guardado exitosamente.");
-            navigate(`/ficha_${arresto.sospechoso_id}`);
-        });
+            showFicha(arresto.sospechoso_id);
+        };
     }
 
     // --- Photo Modal Logic ---

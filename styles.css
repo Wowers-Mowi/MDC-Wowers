@@ -25,6 +25,15 @@ body {
     overflow: hidden;
     height: 100vh;
     width: 100vw;
+}
+
+#desktop-wrapper {
+    position: relative;
+    width: 66.666667vw;
+    height: 66.666667vh;
+    transform: scale(1.5);
+    transform-origin: top left;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
 }
@@ -543,7 +552,7 @@ body {
 
 /* Modal Overlay */
 .modal-overlay {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
@@ -726,7 +735,7 @@ body {
 
 .cards-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(4, 1fr);
     gap: 15px;
 }
 
@@ -769,4 +778,21 @@ body {
 
 .custom-dropdown label:hover {
     background: var(--hover-bg);
+}
+
+/* Admin Mode */
+.admin-only {
+    display: none !important;
+}
+
+.admin-mode .admin-only.flex {
+    display: flex !important;
+}
+
+.admin-mode .admin-only.inline-flex {
+    display: inline-flex !important;
+}
+
+.admin-mode .admin-only:not(.flex):not(.inline-flex) {
+    display: block !important;
 }

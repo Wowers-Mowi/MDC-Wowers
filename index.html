@@ -12,10 +12,11 @@
 </head>
 
 <body>
-    <!-- Top Window Bar -->
-    <div id="window-title-bar">
-        <div class="window-title">MDC</div>
-    </div>
+    <div id="desktop-wrapper">
+        <!-- Top Window Bar -->
+        <div id="window-title-bar">
+            <div class="window-title">MDC</div>
+        </div>
 
     <!-- Background Layer -->
     <div id="background-layer">
@@ -56,9 +57,15 @@
 
         <div class="start-menu-right">
             <div class="menu-section-title">Accesos directos</div>
-            <div class="shortcut-card" data-route="/logs">
-                <i class="fas fa-file-alt"></i>
-                <span>Logs</span>
+            <div style="display: flex; gap: 15px;">
+                <div class="shortcut-card" data-route="/logs">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Logs</span>
+                </div>
+                <div class="shortcut-card" id="btn-admin-toggle">
+                    <i class="fas fa-user-shield"></i>
+                    <span>Admin</span>
+                </div>
             </div>
         </div>
     </div>
@@ -270,6 +277,7 @@
                         <div class="info-box border-yellow">
                             <div class="box-header">
                                 <h3 class="text-yellow">Información personal</h3>
+                                <i class="fas fa-pencil-alt admin-only inline-flex" id="btn-edit-ficha" style="color: var(--yellow-accent); cursor: pointer; align-items: center;" title="Editar ficha"></i>
                             </div>
                             <div class="info-grid">
                                 <div>Identificación</div>
@@ -451,6 +459,118 @@
         </div>
     </template>
 
+    <template id="tpl-logs">
+        <div class="window-panel view-panel" style="background-color: var(--panel-bg);">
+            <div class="panel-header view-header">
+                <span class="panel-title" style="color: white; margin-left: auto; margin-right: auto; margin-top: auto; margin-bottom: auto;">Historial de Logs</span>
+                <i class="fas fa-times close-panel" id="btn-close-logs" style="position:absolute; right:15px; color: white;"></i>
+            </div>
+            <div class="panel-content" style="padding: 20px;">
+                <div id="logs-container" style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Los logs se renderizarán aquí -->
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <div id="edit-ficha-modal" class="modal-overlay hidden">
+        <div class="window-panel" style="width: 800px; max-height: 90%;">
+            <div class="panel-header">
+                <span class="panel-title">Editar ficha gubernamental</span>
+                <i class="fas fa-times close-panel" id="close-edit-ficha-modal"></i>
+            </div>
+            <div class="panel-content">
+                <form id="form-edit-ficha">
+                    <h3 class="section-heading">Información básica</h3>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label>Nombre</label>
+                            <div class="input-with-icon">
+                                <i class="far fa-user"></i>
+                                <input type="text" id="edit-nombre" required autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Apellido</label>
+                            <div class="input-with-icon">
+                                <i class="far fa-user"></i>
+                                <input type="text" id="edit-apellido" required autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label>Identificación (Sin #)</label>
+                            <div class="input-with-icon">
+                                <i class="far fa-id-card"></i>
+                                <input type="text" id="edit-identificacion" required autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Número de teléfono</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-phone-alt"></i>
+                                <input type="text" id="edit-telefono" required autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="section-heading" style="margin-top: 20px;">Información demográfica</h3>
+                    <div class="form-row-4">
+                        <div class="form-group">
+                            <label>Edad</label>
+                            <div class="input-with-icon">
+                                <i class="far fa-user"></i>
+                                <input type="number" id="edit-edad" required autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Género</label>
+                            <div class="input-with-icon">
+                                <select id="edit-genero" required>
+                                    <option value="">Selecciona género</option>
+                                    <option value="Masculino">Masculino</option>
+                                    <option value="Femenino">Femenino</option>
+                                    <option value="No especificado">No especificado</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Residencia</label>
+                            <div class="input-with-icon">
+                                <i class="far fa-building"></i>
+                                <input type="text" id="edit-residencia" required autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Raza</label>
+                            <div class="input-with-icon">
+                                <i class="far fa-user"></i>
+                                <select id="edit-raza" required>
+                                    <option value="">Selecciona raza</option>
+                                    <option value="Caucásico">Caucásico</option>
+                                    <option value="Afroamericano">Afroamericano</option>
+                                    <option value="Hispano">Hispano</option>
+                                    <option value="Asiático">Asiático</option>
+                                    <option value="No especificada">No especificada</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions-center" style="margin-top: 20px; display: flex; gap: 15px; justify-content: center;">
+                        <button type="submit" class="btn-yellow" style="width: 200px;">
+                            <i class="far fa-save"></i> Guardar Cambios
+                        </button>
+                        <button type="button" class="btn-yellow" id="btn-delete-ficha" style="width: 200px; background-color: #e53935; border-color: #e53935; color: white;">
+                            <i class="fas fa-trash-alt"></i> Eliminar Ficha
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div id="informe-modal" class="modal-overlay hidden">
         <div class="window-panel" style="width: 800px; height: 90%; background: #000; border-radius: 0;">
             <div class="panel-header" style="justify-content: space-between; border-bottom: none;">
@@ -487,6 +607,8 @@
             </div>
         </div>
     </div>
+
+    </div> <!-- Closing #desktop-wrapper -->
 
     <script src="app.js"></script>
 </body>
