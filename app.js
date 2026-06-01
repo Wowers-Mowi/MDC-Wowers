@@ -186,6 +186,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const startMenu = document.getElementById('start-menu');
     const clockElement = document.getElementById('clock');
 
+    const btnCodigoPenal = document.getElementById('btn-codigo-penal');
+
+
     // --- Data Management ---
     function getLogs() {
         const data = localStorage.getItem('mdc_logs');
@@ -281,7 +284,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- View System (sin rutas URL) ---
-    const VIEWS = ['inicio', 'add_ficha', 'buscar_ficha', 'ficha', 'reporte_arresto', 'logs'];
+    const VIEWS = ['inicio', 'add_ficha', 'buscar_ficha', 'ficha', 'reporte_arresto', 'logs', 'codigo_penal'];
+
 
     function showView(viewName) {
         appContainer.innerHTML = '';
@@ -320,9 +324,137 @@ document.addEventListener('DOMContentLoaded', () => {
             appContainer.appendChild(template);
             setupLogsView();
         }
+        else if (viewName === 'codigo_penal') {
+            const template = document.getElementById('tpl-codigo-penal').content.cloneNode(true);
+            appContainer.appendChild(template);
+            setupCodigoPenalView();
+        }
+    }
+
+
+    function setupCodigoPenalView() {
+        const btnClose = document.getElementById('btn-close-codigo-penal');
+        if (btnClose) {
+            btnClose.addEventListener('click', () => showView('inicio'));
+        }
+
+        const sidebar = document.getElementById('codigo-penal-sidebar');
+        const grid = document.getElementById('codigo-penal-grid');
+        if (!sidebar || !grid) return;
+
+        const CATEGORIAS = [
+            { key: 'I', title: 'I. Delitos de Tránsito', range: [1, 1.9999] },
+            { key: 'II', title: 'II. Delitos contra el patrimonio', range: [2, 2.9999] },
+            { key: 'III', title: 'III. Delitos contra el orden público', range: [3, 3.9999] },
+            { key: 'IV', title: 'IV. Delitos contra la vida y la libertad', range: [4, 4.9999] },
+            { key: 'V', title: 'V. Delitos contra la conviencia civil', range: [5, 5.9999] },
+            { key: 'VI', title: 'VI. Delitos contra la salud pública', range: [6, 6.9999] },
+            { key: 'VII', title: 'VII. Delitos relacionados con la administración pública', range: [7, 7.9999] },
+            { key: 'VIII', title: 'VIII. Delitos federales', range: [8, 8.9999] },
+            { key: 'IX', title: 'IX. Ofensividad Armamentistica', range: [9, 9.9999] },
+        ];
+
+        function parseCargoToArt(cargo) {
+            const raw = (cargo || '').trim();
+            if (!raw) return null;
+
+            // Examples: "1.1 Exceso de Velocidad"  | "Art. 8.32 Proxenetismo" | "Art. 9.1 Exhibir..."
+            const isArt = raw.startsWith('Art. ');
+            const parts = raw.split(' ');
+            let artToken = '';
+
+            if (isArt) {
+                // "Art. 8.32"
+                artToken = (parts[1] || '').trim();
+            } else {
+                // "1.1"
+                artToken = (parts[0] || '').trim();
+            }
+
+            const match = artToken.match(/^(\d+)\.(\d+)$/);
+            if (!match) return null;
+            const major = Number(match[1]);
+            const minor = Number(match[2]);
+
+            const name = raw.replace(/^Art\.\s+/i, '').replace(new RegExp(`^${artToken}\\s*`), '').trim();
+            const code = isArt ? `Art. ${major}.${minor}` : `${major}.${minor}`;
+            return { major, minor, code, name };
+        }
+
+        const cargosParsed = CARGOS_LIST
+            .map(parseCargoToArt)
+            .filter(Boolean);
+
+        const byCategory = new Map();
+        CATEGORIAS.forEach(c => byCategory.set(c.key, []));
+        cargosParsed.forEach(item => {
+            const major = item.major;
+            let categoryKey = null;
+            if (major === 1) categoryKey = 'I';
+            else if (major === 2) categoryKey = 'II';
+            else if (major === 3) categoryKey = 'III';
+            else if (major === 4) categoryKey = 'IV';
+            else if (major === 5) categoryKey = 'V';
+            else if (major === 6) categoryKey = 'VI';
+            else if (major === 7) categoryKey = 'VII';
+            else if (major === 8) categoryKey = 'VIII';
+            else if (major === 9) categoryKey = 'IX';
+
+            if (categoryKey && byCategory.has(categoryKey)) {
+                byCategory.get(categoryKey).push(item);
+            }
+        });
+
+        function makeCard(item) {
+            const card = document.createElement('div');
+            card.className = 'codigo-penal-card';
+            card.innerHTML = `
+                <div class="codigo-penal-card-top"></div>
+                <div class="codigo-penal-card-text">
+                    <div><strong>${item.code}</strong></div>
+                    <div>${item.name}</div>
+                </div>
+            `;
+            return card;
+        }
+
+        function renderSidebar(activeKey) {
+            sidebar.innerHTML = '';
+            CATEGORIAS.forEach(cat => {
+                const row = document.createElement('div');
+                row.className = 'codigo-penal-sidebar-item' + (cat.key === activeKey ? ' active' : '');
+                row.setAttribute('data-cat', cat.key);
+                row.textContent = cat.title;
+                row.addEventListener('click', () => {
+                    renderSidebar(cat.key);
+                    renderGrid(cat.key);
+                });
+                sidebar.appendChild(row);
+            });
+        }
+
+        function renderGrid(catKey) {
+            grid.innerHTML = '';
+            const items = (byCategory.get(catKey) || []).slice();
+
+            // sort by major then minor
+            items.sort((a, b) => (a.major - b.major) || (a.minor - b.minor));
+
+            if (items.length === 0) {
+                grid.innerHTML = '<div class="codigo-penal-empty">Sin cargos en esta categoría.</div>';
+                return;
+            }
+
+            items.forEach(item => grid.appendChild(makeCard(item)));
+        }
+
+        // default active
+        renderSidebar('I');
+        renderGrid('I');
     }
 
     function setupLogsView() {
+
         const btnClose = document.getElementById('btn-close-logs');
         if (btnClose) btnClose.addEventListener('click', () => showView('inicio'));
         
@@ -364,10 +496,72 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Initial view
-    showView('inicio');
+    function initUsoModal() {
+        const usoModal = document.getElementById('uso-modal');
+        const usoCheckbox = document.getElementById('uso-acepto');
+        const btnContinuar = document.getElementById('btn-aceptar-uso');
+
+        if (!usoModal || !usoCheckbox || !btnContinuar) {
+            // Si el modal no existe (por cualquier motivo), no bloqueamos la app.
+            return;
+        }
+
+        const storageKey = 'mdc_uso_aceptado_v1';
+        const accepted = localStorage.getItem(storageKey) === 'true';
+        if (accepted) {
+            usoModal.classList.add('hidden');
+            return;
+        }
+
+        usoModal.classList.remove('hidden');
+        btnContinuar.disabled = true;
+
+        function syncButton() {
+            const ok = usoCheckbox.checked;
+            btnContinuar.disabled = !ok;
+            btnContinuar.style.opacity = ok ? '1' : '0.55';
+            btnContinuar.style.cursor = ok ? 'pointer' : 'not-allowed';
+        }
+
+        usoCheckbox.addEventListener('change', syncButton);
+        syncButton();
+
+        btnContinuar.addEventListener('click', () => {
+            if (!usoCheckbox.checked) return;
+            localStorage.setItem(storageKey, 'true');
+            usoModal.classList.add('hidden');
+        });
+    }
+
+    // Initial view (se muestra luego de aceptar)
+    initUsoModal();
+
+    if (localStorage.getItem('mdc_uso_aceptado_v1') === 'true') {
+        showView('inicio');
+    }
+
+    if (btnCodigoPenal) {
+        btnCodigoPenal.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showView('codigo_penal');
+        });
+    }
+
+    // Cuando se acepte el modal, se debe cargar la vista inicial
+    const usoCheckbox = document.getElementById('uso-acepto');
+    const btnContinuar = document.getElementById('btn-aceptar-uso');
+    if (usoCheckbox && btnContinuar) {
+        btnContinuar.addEventListener('click', () => {
+            if (localStorage.getItem('mdc_uso_aceptado_v1') === 'true') {
+                showView('inicio');
+            }
+        });
+    }
+
 
     // --- Logic for Templates ---
+
+
 
     function setupAddFichaForm() {
         const form = document.getElementById('form-add-ficha');

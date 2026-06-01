@@ -86,7 +86,7 @@
             <div class="taskbar-icon" data-route="/reporte_arresto" title="Reporte de Arresto">
                 <i class="fas fa-handcuffs"></i>
             </div>
-            <div class="taskbar-icon" title="Libro">
+            <div class="taskbar-icon" id="btn-codigo-penal" title="Código Penal">
                 <i class="fas fa-book-open"></i>
             </div>
             <div class="taskbar-icon" title="Usuario">
@@ -473,6 +473,27 @@
         </div>
     </template>
 
+    <template id="tpl-codigo-penal">
+        <div class="window-panel view-panel" style="background-color: var(--panel-bg);">
+            <div class="panel-header view-header" style="justify-content: space-between;">
+                <div style="flex:1;"></div>
+                <div style="flex:1; text-align: center; color: white; font-size: 16px; font-weight: 500;">Código Penal</div>
+                <div style="flex:1; display:flex; justify-content:flex-end;">
+                    <i class="fas fa-times close-panel" id="btn-close-codigo-penal" style="font-size:16px;" ></i>
+                </div>
+            </div>
+
+            <div class="panel-content" style="padding: 0; height: calc(100% - 45px);">
+                <div id="codigo-penal-container" class="codigo-penal-container">
+                    <div id="codigo-penal-sidebar" class="codigo-penal-sidebar"></div>
+                    <div class="codigo-penal-main">
+                        <div id="codigo-penal-grid" class="codigo-penal-grid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <div id="edit-ficha-modal" class="modal-overlay hidden">
         <div class="window-panel" style="width: 800px; max-height: 90%;">
             <div class="panel-header">
@@ -609,6 +630,51 @@
     </div>
 
     </div> <!-- Closing #desktop-wrapper -->
+
+    <!-- Modal de información y condiciones de uso -->
+    <div id="uso-modal" class="modal-overlay hidden">
+
+        <div class="window-panel" style="width: 860px; height: 75%; background: #000; border-radius: 0;">
+            <div class="panel-header" style="justify-content: space-between; border-bottom: 1px solid #1a2233;">
+                <div style="flex:1;"></div>
+                <div style="flex:1; text-align:center; color:white; font-size:16px; font-weight:500;">Informacion y condiciones de uso</div>
+                <div style="flex:1; display:flex; justify-content:flex-end;">
+                    <i class="fas fa-times close-panel" id="btn-close-uso" style="position:relative; right:0; font-size:16px; opacity:0.0; pointer-events:none;"></i>
+                </div>
+            </div>
+
+            <div class="panel-content" style="padding: 20px 35px; height: calc(100% - 45px); background:#0b0b0b; overflow-y:auto;" id="uso-modal-content">
+                <div class="uso-text" style="color: white; font-size: 13px; line-height: 1.5;">
+                    <p style="margin-bottom: 14px;">
+                        Este programa ha sido desarrollado exclusivamente con fines didácticos y no pretende reemplazar a ningún otro sistema oficial.
+                    </p>
+                    <p style="margin-bottom: 14px;">
+                        Su propósito es servir como entorno de pruebas para la creación de fichas y registros de arrestos, permitiendo al usuario practicar y familiarizarse con el flujo de trabajo sin temor a cometer errores.
+                    </p>
+                    <p style="margin-bottom: 14px;">
+                        En futuras actualizaciones, se integrarán funciones para la emisión de órdenes de búsqueda y captura (ByC), generación de alertas de búsqueda (BOLOs) y la gestión de anotaciones personalizadas para cada ficha.
+                    </p>
+                    <p style="margin-bottom: 14px;">
+                        Es importante señalar que este programa no utiliza bases de datos externas ni compartidas. Toda la información se almacena automáticamente en el navegador de manera local, garantizando que el acceso a los datos sea completamente privado y restringido únicamente al usuario.
+                    </p>
+                    <p style="margin-bottom: 14px;">
+                        <strong>Nota legal:</strong> El uso de este programa debe realizarse de manera responsable; el creador no se hace responsable por cualquier uso indebido del mismo. Asimismo, queda prohibida su divulgación libre sin la autorización expresa de su creador, Wowers.
+                    </p>
+                </div>
+
+                <div class="uso-accept-row" style="display:flex; align-items:center; gap:12px; margin-top: 18px;">
+                    <input type="checkbox" id="uso-acepto" style="width:16px; height:16px; cursor:pointer;">
+                    <div style="color:white; font-size: 13px;">He leido, entiendo y acepto los terminos.</div>
+                </div>
+
+                <div class="uso-actions" style="display:flex; justify-content:center; margin-top: 22px;">
+                    <button id="btn-aceptar-uso" class="btn-yellow" style="width: 280px; opacity:0.55; cursor:not-allowed;" disabled>
+                        Continuar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>
