@@ -6,7 +6,7 @@
     --input-border: #29303f;
     --text-main: #ffffff;
     --text-muted: #8d95a5;
-    --yellow-accent: #fcd462;
+    --yellow-accent: #0d3468;
     --red-accent: #e53935;
     --start-menu-bg: rgba(23, 30, 43, 0.95);
     --hover-bg: rgba(255, 255, 255, 0.05);
@@ -464,7 +464,7 @@ body {
 }
 
 .btn-yellow:hover {
-    background-color: #ebc04b;
+    background-color: #1a4c8f;
 }
 
 .btn-full {
